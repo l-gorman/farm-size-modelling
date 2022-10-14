@@ -50,7 +50,7 @@ if (is.null(warmup)){
 
 # Data Loading and Prep ------------------------------------------------
 
-final_df <- readr::read_csv(paste0(base,"prepared-data/final-modelling-dataset.csv"))
+final_df <- readr::read_csv(paste0(opt$base,"prepared-data/final-modelling-dataset.csv"))
 
 
 land_cover_columns <-c("evergreen_needle_leaf",
@@ -105,12 +105,12 @@ x <- c("healthcare_traveltime",
 # Directory Creation ------------------------------------------------------
 
 
-main_folder <- paste0(base,"outputs/",opt$directory)
-sub_folder <- paste0(base,"outputs/",opt$directory,"/n_",opt$number, "_iter_",opt$iter)
+main_folder <- paste0(opt$base,"outputs/",opt$directory)
+sub_folder <- paste0(opt$base,"outputs/",opt$directory,"/n_",opt$number, "_iter_",opt$iter)
 
-conv_folder <- paste0(base,"outputs/",opt$directory,"/n_",opt$number, "_iter_",opt$iter,"/simple_regression")
-dist_folder <- paste0(base,"outputs/",opt$directory,"/n_",opt$number, "_iter_",opt$iter,"/free_variance")
-lss_folder <- paste0(base,"outputs/",opt$directory,"/n_",opt$number, "_iter_",opt$iter,"/location_scale_shape")
+conv_folder <- paste0(opt$base,"outputs/",opt$directory,"/n_",opt$number, "_iter_",opt$iter,"/simple_regression")
+dist_folder <- paste0(opt$base,"outputs/",opt$directory,"/n_",opt$number, "_iter_",opt$iter,"/free_variance")
+lss_folder <- paste0(opt$base,"outputs/",opt$directory,"/n_",opt$number, "_iter_",opt$iter,"/location_scale_shape")
 
 
 dir.create(path=main_folder,showWarnings = F)

@@ -6,7 +6,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=4
-#SBATCH --time=08:00:00
+#SBATCH --time=24:00:00
 #SBATCH --mem=12G
 
 
@@ -29,10 +29,12 @@ module add languages/r/4.1.0
 
 export OMP_NUM_THREADS=4
 
-for SAMPLE in 100 500 1000 2000
+for SAMPLE in  500
+#for SAMPLE in  5000 1000 20000
 do
-  for ITER in 2000 5000 10000 20000 50000
+  #for ITER in  10000 20000 50000
+  for ITER in  2000
   do
-    Rscript skew-normal-fit.R -n $SAMPLE -i $ITER -d $d
+    Rscript skew-normal-fit.R -n $SAMPLE -i $ITER -d $d -b "/user/work/lg14410/farm-size-modelling/"
   done
 done
