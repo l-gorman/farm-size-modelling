@@ -6,7 +6,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=4
-#SBATCH --time=24:00:00
+#SBATCH --time=1:00:00
 #SBATCH --mem=12G
 
 
@@ -35,6 +35,6 @@ do
   #for ITER in  10000 20000 50000
   for ITER in  2000
   do
-    Rscript skew-normal-fit.R -n $SAMPLE -i $ITER -d $d -b "/user/work/lg14410/farm-size-modelling/"
+    Rscript 02-exploratory-analysis.R -n $SAMPLE -i $ITER -d $d -b "/user/work/lg14410/farm-size-modelling/"
   done
 done
