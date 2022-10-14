@@ -29,11 +29,11 @@ module add languages/r/4.1.0
 
 export OMP_NUM_THREADS=4
 
-for SAMPLE in  500
-#for SAMPLE in  5000 1000 20000
+# for SAMPLE in  500
+for SAMPLE in  5000 1000 20000
 do
-  #for ITER in  10000 20000 50000
-  for ITER in  2000
+  for ITER in  10000 20000 50000
+  # for ITER in  2000
   do
     Rscript 02-exploratory-analysis.R -n $SAMPLE -i $ITER -d $d -b "/user/work/lg14410/farm-size-modelling/"
   done
