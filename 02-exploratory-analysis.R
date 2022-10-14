@@ -155,7 +155,6 @@ conv_fm <- bf(
   farm_size_ha  ~ 0 + Intercept + level_2_aez_33_classes_desert_or_arid_climate + barren + length_growing_season + ndvi + healthcare_traveltime
 )
 
-sample <- 5000
 # brms::get_prior(conv_fm,final_df[1:sample,])
 
 conv_brm <-brm(conv_fm, 
