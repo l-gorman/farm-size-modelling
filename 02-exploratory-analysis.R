@@ -1,6 +1,7 @@
 
 # Setup -------------------------------------------------------------------
 library(brms) 
+library(tibble)
 library(ggplot2)
 library(parallel)
 library(optparse)
@@ -11,18 +12,25 @@ set.seed(404)
 option_list = list(
   make_option(c("-i", "--iter"),  type='integer',
               help="Iterations"),
+  make_option(c("-n", "--number"),  type='integer',
+              help="Number of hhs to sample"),
+  make_option(c("-b", "--base"), type='character',
+              help="Base directory where files will be loaded from"),
   make_option(c("-d", "--directory"), type='character',
-              help="The directory where the file will be stored and loaded from")
+              help="The directory where the file will be saved")
+
   
   
 )
 opt_parser = OptionParser(option_list=option_list);
 opt = parse_args(opt_parser);
 
-opt <- list(
-  iter=2000,
-  directory="iter_comparison"
-)
+# opt <- list(
+#   iter=2000,
+#   number=5000,
+#   directory="initial_comparison",
+#   base="./"
+# )
 
 if (opt$iter==2000){
   warmup <- 1000
@@ -42,7 +50,7 @@ if (is.null(warmup)){
 
 # Data Loading and Prep ------------------------------------------------
 
-final_df <- readr::read_csv("./data/prepared-data/final-modelling-dataset.csv")
+final_df <- readr::read_csv(paste0(base,"prepared-data/final-modelling-dataset.csv"))
 
 
 land_cover_columns <-c("evergreen_needle_leaf",
@@ -97,12 +105,12 @@ x <- c("healthcare_traveltime",
 # Directory Creation ------------------------------------------------------
 
 
-main_folder <- paste0("./outputs/",opt$directory)
-sub_folder <- paste0("./outputs/",opt$directory,"/n_",opt$number, "_iter_",opt$iter)
+main_folder <- paste0(base,"outputs/",opt$directory)
+sub_folder <- paste0(base,"outputs/",opt$directory,"/n_",opt$number, "_iter_",opt$iter)
 
-conv_folder <- paste0("./outputs/",opt$directory,"/n_",opt$number, "_iter_",opt$iter,"/simple_regression")
-dist_folder <- paste0("./outputs/",opt$directory,"/n_",opt$number, "_iter_",opt$iter,"/free_variance")
-lss_folder <- paste0("./outputs/",opt$directory,"/n_",opt$number, "_iter_",opt$iter,"/location_scale_shape")
+conv_folder <- paste0(base,"outputs/",opt$directory,"/n_",opt$number, "_iter_",opt$iter,"/simple_regression")
+dist_folder <- paste0(base,"outputs/",opt$directory,"/n_",opt$number, "_iter_",opt$iter,"/free_variance")
+lss_folder <- paste0(base,"outputs/",opt$directory,"/n_",opt$number, "_iter_",opt$iter,"/location_scale_shape")
 
 
 dir.create(path=main_folder,showWarnings = F)
@@ -114,6 +122,10 @@ dir.create(path=lss_folder,showWarnings = F)
 
 
 
+# subsetting data ---------------------------------------------------------
+sample <- sample(c(1:nrow(final_df)), opt$number)
+
+sample_df <-  final_df[sample,]
 
 # Conventional Model ------------------------------------------------------
 
@@ -127,7 +139,7 @@ sample <- 5000
 # brms::get_prior(conv_fm,final_df[1:sample,])
 
 conv_brm <-brm(conv_fm, 
-    data = final_df[1:sample,], 
+    data = sample_df, 
     cores = 4,
     chains = 4,
     control=list(adapt_delta = 0.9, max_treedepth=12),
@@ -150,10 +162,30 @@ conv_brm <-brm(conv_fm,
     
 )
 
+save(conv_brm, file = paste0(conv_folder,"/distributional_fit.rda"))
+
+png(filename = paste0(conv_folder,"/mcmc_plot.png"))
 bayesplot::mcmc_trace(conv_brm)
+dev.off()
+
+png(filename = paste0(conv_folder,"/pp_check.png"))
+pp_check(conv_brm)
+dev.off()
+
+sink(paste0(conv_folder,"/fit_diagnostics.txt"))
+cat("\n")
+cat(paste0("Fit Summary\n"))
+summary(conv_brm)
+cat("\n")
+cat(paste0("Prior Summary\n"))
+prior_summary(conv_brm)
+cat("\n")
+sink()
+
+
 
 # Predict on original data
-conv_post_pred <- predict(conv_brm, newdata = final_df[1:sample,]) %>% as_tibble()
+# conv_post_pred <- predict(conv_brm, newdata = sample_df) %>% as_tibble()
 
 # density_lower_bound <- density(conv_post_pred$Q2.5) 
 # density_upper_bound <- density(conv_post_pred$Q97.5) 
@@ -166,17 +198,179 @@ conv_post_pred <- predict(conv_brm, newdata = final_df[1:sample,]) %>% as_tibble
 # ))
 
 
-
-conv_plot <- ggplot() +
-  geom_density(data=final_df, aes(x=farm_size_ha, color="Actual Distribuition"), )+
-  geom_density(data=conv_post_pred, aes(x=Estimate, color="Predictions (on Same Data)"))+
-  scale_colour_manual(c("",""),values=c("red","blue"))
-  
-
-
+# 
+# conv_plot <- ggplot() +
+#   geom_density(data=final_df, aes(x=farm_size_ha, color="Actual Distribuition"), )+
+#   geom_density(data=conv_post_pred, aes(x=Estimate, color="Predictions (on Same Data)"))+
+#   scale_colour_manual(c("",""),values=c("red","blue"))
+#   
 
 
+# Distributional Model ----------------------------------------------------
 
+
+
+dist_fm <- bf(
+  farm_size_ha  ~ 0 + Intercept + level_2_aez_33_classes_desert_or_arid_climate + barren + length_growing_season + ndvi + healthcare_traveltime,
+  sigma ~ 0 + Intercept + level_2_aez_33_classes_desert_or_arid_climate + barren + length_growing_season + ndvi + healthcare_traveltime
+)
+
+# get_prior(dist_fm,sample_df)
+dist_brm <- brm(dist_fm, 
+                data = sample_df,
+                cores = 4,
+                control=list(adapt_delta = 0.9, max_treedepth=12),
+                iter = opt$iter,
+                
+                init = 0,
+                seed = 404,
+                prior = c(
+                  # Location Parameter Intercept
+                  prior("normal(0, 10)", class = b,coef = Intercept),
+                  
+                  # Coefficients of Location Parameters
+                  prior("normal(0, 10)", class = b, coef = barren),
+                  prior("normal(0, 10)", class = b, coef = healthcare_traveltime),
+                  prior("normal(0, 10)", class = b, coef = length_growing_season),
+                  prior("normal(0, 10)", class = b, coef = level_2_aez_33_classes_desert_or_arid_climate),
+                  prior("normal(0, 10)", class = b, coef = ndvi),
+
+                  
+                  # Scale Parameter Intercept
+                  prior("normal(0, 10)", coef=Intercept,dpar = sigma),
+                  
+                  # Coefficients of Scale Parameters
+                  prior("normal(0, 10)", dpar = sigma, coef = barren),
+                  prior("normal(0, 10)", dpar = sigma, coef = healthcare_traveltime),
+                  prior("normal(0, 10)", dpar = sigma, coef = length_growing_season),
+                  prior("normal(0, 10)", dpar = sigma, coef = level_2_aez_33_classes_desert_or_arid_climate),
+                  prior("normal(0, 10)", dpar = sigma, coef = ndvi)
+
+                ))
+
+
+save(dist_brm, file = paste0(dist_folder,"/distributional_fit.rda"))
+
+png(filename = paste0(dist_folder,"/mcmc_plot.png"))
+bayesplot::mcmc_trace(dist_brm)
+dev.off()
+
+png(filename = paste0(dist_folder,"/pp_check.png"))
+pp_check(dist_brm)
+dev.off()
+
+
+sink(paste0(dist_folder,"/fit_diagnostics.txt"))
+
+cat("\n")
+cat(paste0("Fit Summary\n"))
+summary(dist_brm)
+cat("\n")
+cat(paste0("Prior Summary\n"))
+prior_summary(dist_brm)
+cat("\n")
+sink()
+
+
+
+# Model For Location Scale and Shape --------------------------------------
+
+
+
+
+lss_fm <- bf(
+  farm_size_ha  ~ 0 + Intercept + level_2_aez_33_classes_desert_or_arid_climate + barren + length_growing_season + ndvi + healthcare_traveltime,
+  sigma ~ 0 + Intercept + level_2_aez_33_classes_desert_or_arid_climate + barren + length_growing_season + ndvi + healthcare_traveltime,
+  alpha ~ 0 + Intercept + level_2_aez_33_classes_desert_or_arid_climate + barren + length_growing_season + ndvi + healthcare_traveltime
+)
+
+# get_prior(lss_fm,sample_df, family = skew_normal())
+lss_brm <- brm(lss_fm, 
+               data = sample_df, 
+               family = skew_normal(
+                 link = "identity", 
+                 link_sigma = "log", 
+                 link_alpha = "identity"),
+               control=list(adapt_delta = 0.9, max_treedepth=12),
+               cores = 4,
+               iter = opt$iter,
+               prior = c(
+                 
+                 # Location Parameter Intercept
+                 prior("normal(0, 10)", coef = Intercept, class=b),
+                 
+                 # Coefficients of Location Parameters
+                 prior("normal(0, 10)", class = b, coef = barren),
+                 prior("normal(0, 10)", class = b, coef = healthcare_traveltime),
+                 prior("normal(0, 10)", class = b, coef = length_growing_season),
+                 prior("normal(0, 10)", class = b, coef = level_2_aez_33_classes_desert_or_arid_climate),
+                 prior("normal(0, 10)", class = b, coef = ndvi),
+                 
+                 # Scale Parameter Intercept
+                 prior("normal(0, 10)", coef=Intercept ,dpar = sigma),
+                 
+                 # Coefficients of Scale Parameter
+                 prior("normal(0, 10)", dpar = sigma, coef = barren),
+                 prior("normal(0, 10)", dpar = sigma, coef = healthcare_traveltime),
+                 prior("normal(0, 10)", dpar = sigma, coef = length_growing_season),
+                 prior("normal(0, 10)", dpar = sigma, coef = level_2_aez_33_classes_desert_or_arid_climate),
+                 prior("normal(0, 10)", dpar = sigma, coef = ndvi),  
+                 
+                 # Scale Parameter Intercept
+                 prior("normal(0, 10)", coef=Intercept ,dpar = alpha),
+                 
+                 
+                 # Coefficients of Shape Parameter
+                 prior("normal(0, 10)", dpar = alpha, coef = barren),
+                 prior("normal(0, 10)", dpar = alpha, coef = healthcare_traveltime),
+                 prior("normal(0, 10)", dpar = alpha, coef = length_growing_season),
+                 prior("normal(0, 10)", dpar = alpha, coef = level_2_aez_33_classes_desert_or_arid_climate),
+                 prior("normal(0, 10)", dpar = alpha, coef = ndvi)                   
+               ),init = 0,
+               seed = 404
+               
+)
+
+save(lss_brm, file = paste0(lss_folder,"/distributional_fit.rda"))
+
+png(filename = paste0(lss_folder,"/mcmc_plot.png"))
+bayesplot::mcmc_trace(lss_brm)
+dev.off()
+
+bayesplot::mcmc_trace(lss_brm)
+
+png(filename = paste0(lss_folder,"/pp_check.png"))
+pp_check(lss_brm)
+dev.off()
+
+sink(paste0(lss_folder,"/fit_diagnostics.txt"))
+cat("\n")
+cat(paste0("Fit Summary\n"))
+summary(lss_brm)
+cat("\n")
+cat(paste0("Prior Summary\n"))
+prior_summary(lss_brm)
+cat("\n")
+sink()
+
+
+
+
+# Validation --------------------------------------------------------------
+
+loo_res <- brms::loo(conv_brm, dist_brm)#, lss_brm)
+loo_comparison <- loo_res$diffs
+print(loo_res)
+# kfold_res <- brms::kfold(conv_brm, dist_brm, lss_brm)
+# kfold_comparison <- kfold_res$diffs
+
+
+sink(paste0(sub_folder,"/fit_differences.txt"))
+cat("\n")
+cat(paste0("Fit Differences\n"))
+summary(loo_res)
+cat("\n")
+sink()
 
 
 #' Validate with K-FOLD cross-validation:
