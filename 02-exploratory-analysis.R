@@ -113,6 +113,8 @@ dist_folder <- paste0(opt$base,"outputs/",opt$directory,"/n_",opt$number, "_iter
 lss_folder <- paste0(opt$base,"outputs/",opt$directory,"/n_",opt$number, "_iter_",opt$iter,"/location_scale_shape")
 
 
+dir.create(path=paste0(opt$base,"outputs/"),showWarnings = F)
+
 dir.create(path=main_folder,showWarnings = F)
 dir.create(path=sub_folder,showWarnings = F)
 
