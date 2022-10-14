@@ -42,6 +42,14 @@ if (opt$iter==10000){
   warmup <- 4000
 }
 
+if (opt$iter==20000){
+  warmup <- 8000
+}
+if (opt$iter==50000){
+  warmup <- 20000
+}
+
+
 
 if (is.null(warmup)){
   stop("need to select a number of warmup iterations")
