@@ -110,6 +110,16 @@ x <- c("healthcare_traveltime",
 
 
 
+# Rescaling  --------------------------------------------------------------
+
+range01 <- function(x){(x-min(x))/(max(x)-min(x))}
+
+for (column in c(land_cover_columns,aez_columns,x)){
+  final_df[[column]]<- range01(final_df[[column]])
+  
+}
+
+
 # Directory Creation ------------------------------------------------------
 
 
@@ -160,11 +170,11 @@ conv_brm <-brm(conv_fm,
     prior = c(
       prior("normal(0, 10)", class = b, coef = Intercept),
       # prior("normal(0, 10)", class = Intercept),
-      prior("normal(0, 100)", class = b, coef = level_2_aez_33_classes_desert_or_arid_climate),
-      prior("normal(0, 100)", class = b, coef = barren),
-      prior("normal(0, 100)", class = b, coef = length_growing_season),
-      prior("normal(0, 100)", class = b, coef = ndvi),
-      prior("normal(0, 100)", class = b, coef = healthcare_traveltime),
+      prior("normal(0, 10)", class = b, coef = level_2_aez_33_classes_desert_or_arid_climate),
+      prior("normal(0, 10)", class = b, coef = barren),
+      prior("normal(0, 10)", class = b, coef = length_growing_season),
+      prior("normal(0, 10)", class = b, coef = ndvi),
+      prior("normal(0, 10)", class = b, coef = healthcare_traveltime),
       
       prior("normal(0, 10)", class = sigma)
     )
