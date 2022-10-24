@@ -7,7 +7,7 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=4
 #SBATCH --time=2-00:00:00
-#SBATCH --mem=24G
+#SBATCH --mem=36G
 
 
 cd "${SLURM_SUBMIT_DIR}"
@@ -29,12 +29,16 @@ module add languages/r/4.1.0
 
 export OMP_NUM_THREADS=4
 
-# for SAMPLE in  500
-for SAMPLE in  10000 20000
-do
-  for ITER in  10000 20000 
-  # for ITER in  2000
-  do
-    Rscript 02-exploratory-analysis.R -n $SAMPLE -i $ITER -d $d -b "/user/work/lg14410/farm-size-modelling/"
-  done
-done
+
+Rscript 02-exploratory-analysis.R -n "MAX" -i 10000 -d "full_lsms_kfold_22_10_2022" -b "/user/work/lg14410/farm-size-modelling/"
+
+#for SAMPLE in  10000 20000  "MAX" 
+
+# for SAMPLE in "MAX" 
+# do
+#   for ITER in  10000 20000 
+#   # for ITER in  2000
+#   do
+#     Rscript 02-exploratory-analysis.R -n $SAMPLE -i $ITER -d $d -b "/user/work/lg14410/farm-size-modelling/"
+#   done
+# done

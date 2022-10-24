@@ -24,7 +24,7 @@ option_list = list(
 )
 opt_parser = OptionParser(option_list=option_list);
 opt = parse_args(opt_parser);
-
+# 
 # opt <- list(
 #   iter=2000,
 #   number=5000,
@@ -122,6 +122,9 @@ for (column in c(land_cover_columns,aez_columns,x)){
 
 # Directory Creation ------------------------------------------------------
 
+if (opt$number=="MAX"){
+  opt$number <- nrow(final_df)
+}
 
 main_folder <- paste0(opt$base,"outputs/",opt$directory)
 sub_folder <- paste0(opt$base,"outputs/",opt$directory,"/n_",opt$number, "_iter_",opt$iter)
@@ -155,6 +158,7 @@ conv_fm <- bf(
   farm_size_ha  ~ 0 + Intercept + level_2_aez_33_classes_desert_or_arid_climate + barren + length_growing_season + ndvi + healthcare_traveltime
 )
 
+sample <- 5000
 # brms::get_prior(conv_fm,final_df[1:sample,])
 
 conv_brm <-brm(conv_fm, 
@@ -183,11 +187,11 @@ conv_brm <-brm(conv_fm,
 
 save(conv_brm, file = paste0(conv_folder,"/distributional_fit.rda"))
 
-png(filename = paste0(conv_folder,"/mcmc_plot.png"))
-bayesplot::mcmc_trace(conv_brm)
+png(filename = paste0(conv_folder,"/mcmc_plot.png"),width = 1000,height=1000)
+bayesplot::mcmc_trace(conv_brm,)
 dev.off()
 
-png(filename = paste0(conv_folder,"/pp_check.png"))
+png(filename = paste0(conv_folder,"/pp_check.png"), width = 1000,height=1000)
 pp_check(conv_brm)
 dev.off()
 
@@ -270,11 +274,12 @@ dist_brm <- brm(dist_fm,
 
 save(dist_brm, file = paste0(dist_folder,"/distributional_fit.rda"))
 
-png(filename = paste0(dist_folder,"/mcmc_plot.png"))
+png(filename = paste0(dist_folder,"/mcmc_plot.png"),width = 1000,height=1000)
+
 bayesplot::mcmc_trace(dist_brm)
 dev.off()
 
-png(filename = paste0(dist_folder,"/pp_check.png"))
+png(filename = paste0(dist_folder,"/pp_check.png"),width = 1000,height=1000)
 pp_check(dist_brm)
 dev.off()
 
@@ -352,13 +357,12 @@ lss_brm <- brm(lss_fm,
 
 save(lss_brm, file = paste0(lss_folder,"/distributional_fit.rda"))
 
-png(filename = paste0(lss_folder,"/mcmc_plot.png"))
+png(filename = paste0(lss_folder,"/mcmc_plot.png"),width = 1000,height=1000)
 bayesplot::mcmc_trace(lss_brm)
 dev.off()
 
-bayesplot::mcmc_trace(lss_brm)
 
-png(filename = paste0(lss_folder,"/pp_check.png"))
+png(filename = paste0(lss_folder,"/pp_check.png"),width = 1000,height=1000)
 pp_check(lss_brm)
 dev.off()
 
@@ -376,18 +380,29 @@ sink()
 
 
 # Validation --------------------------------------------------------------
+# Rprof(tf <- "rprof.log", memory.profiling=TRUE)
+# 
+# loo_res <- brms::loo(conv_brm, dist_brm)#, lss_brm)
+# Rprof(NULL)
+# summaryRprof(tf)
+#' Could use the "groups" param
+#' to perform kfold ax
 
-loo_res <- brms::loo(conv_brm, dist_brm)#, lss_brm)
-loo_comparison <- loo_res$diffs
-print(loo_res)
+kfold_res <- kfold(conv_brm,dist_brm,lss_brm) 
 # kfold_res <- brms::kfold(conv_brm, dist_brm, lss_brm)
 # kfold_comparison <- kfold_res$diffs
+save(kfold_res, file = paste0(sub_folder,"/kfold_results.rda"))
 
 
 sink(paste0(sub_folder,"/fit_differences.txt"))
 cat("\n")
-cat(paste0("Fit Differences\n"))
-summary(loo_res)
+cat(paste0("KFOLD Fit Differences\n"))
+print(loo_res)
+
+
+cat("\n")
+cat(paste0("KFOLD Fit Summary\n"))
+summary(kfold_res)
 cat("\n")
 sink()
 

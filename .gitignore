@@ -1,2 +1,4 @@
 *.DS_Store
 .Rproj.user/
+rprof.log
+test-bash-for-loop.sh
