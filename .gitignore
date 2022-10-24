@@ -2,3 +2,5 @@
 .Rproj.user/
 rprof.log
 test-bash-for-loop.sh
+slurm*
+.Rhistory
