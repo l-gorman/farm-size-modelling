@@ -7,7 +7,11 @@ library(parallel)
 library(optparse)
 library(magrittr)
 library(bayesplot)
+library(future)
 set.seed(404)
+
+
+
 
 option_list = list(
   make_option(c("-i", "--iter"),  type='integer',
@@ -17,7 +21,10 @@ option_list = list(
   make_option(c("-b", "--base"), type='character',
               help="Base directory where files will be loaded from"),
   make_option(c("-d", "--directory"), type='character',
-              help="The directory where the file will be saved")
+              help="The directory where the file will be saved"),
+  make_option(c("-c", "--ncores"), type='character',
+              help="The number of chains/cores")
+  
 
   
   
@@ -29,8 +36,12 @@ opt = parse_args(opt_parser);
 #   iter=2000,
 #   number=5000,
 #   directory="initial_comparison",
-#   base="./"
+#   base="./",
+#   ncores="4"
 # )
+
+# ncores = 4
+  
 
 if (opt$iter==2000){
   warmup <- 1000
@@ -163,7 +174,7 @@ sample <- 5000
 
 conv_brm <-brm(conv_fm, 
     data = sample_df, 
-    cores = 4,
+    cores = opt$ncores,
     chains = 4,
     control=list(adapt_delta = 0.8, max_treedepth=10),
     iter=opt$iter,
@@ -241,7 +252,7 @@ dist_fm <- bf(
 # get_prior(dist_fm,sample_df)
 dist_brm <- brm(dist_fm, 
                 data = sample_df,
-                cores = 4,
+                cores = opt$ncores,
                 control=list(adapt_delta = 0.8, max_treedepth=10),
                 iter = opt$iter,
                 
@@ -316,7 +327,7 @@ lss_brm <- brm(lss_fm,
                  link_sigma = "log", 
                  link_alpha = "identity"),
                control=list(adapt_delta = 0.8, max_treedepth=10),
-               cores = 4,
+               cores = opt$ncores,
                iter = opt$iter,
                prior = c(
                  
@@ -387,7 +398,10 @@ sink()
 # summaryRprof(tf)
 #' Could use the "groups" param
 #' to perform kfold ax
+#' 
+  # plan(multiprocess)
 
+plan(multiprocess)
 kfold_res <- kfold(conv_brm,dist_brm,lss_brm) 
 # kfold_res <- brms::kfold(conv_brm, dist_brm, lss_brm)
 # kfold_comparison <- kfold_res$diffs
