@@ -7,7 +7,6 @@ library(parallel)
 library(optparse)
 library(magrittr)
 library(bayesplot)
-library(future)
 set.seed(404)
 
 
@@ -400,9 +399,7 @@ sink()
 #' to perform kfold ax
 #' 
   # plan(multiprocess)
-
-plan(multiprocess)
-kfold_res <- kfold(conv_brm,dist_brm,lss_brm) 
+# kfold_res <- kfold(conv_brm,dist_brm,lss_brm, chains=ncores, cores=ncores) 
 # kfold_res <- brms::kfold(conv_brm, dist_brm, lss_brm)
 # kfold_comparison <- kfold_res$diffs
 save(kfold_res, file = paste0(sub_folder,"/kfold_results.rda"))
@@ -411,7 +408,7 @@ save(kfold_res, file = paste0(sub_folder,"/kfold_results.rda"))
 sink(paste0(sub_folder,"/fit_differences.txt"))
 cat("\n")
 cat(paste0("KFOLD Fit Differences\n"))
-print(loo_res)
+print(kfold_res)
 
 
 cat("\n")
