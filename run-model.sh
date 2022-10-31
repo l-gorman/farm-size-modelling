@@ -6,7 +6,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=4
-#SBATCH --time=1-02:00:00
+#SBATCH --time=2-12:00:00
 #SBATCH --mem=36G
 
 
@@ -30,7 +30,7 @@ module add languages/r/4.1.0
 export OMP_NUM_THREADS=4
 
 
-Rscript 02-exploratory-analysis.R -n 10000 -i 5000 -d "full_lsms_kfold_parallel_27_10_2022" -b "/user/work/lg14410/farm-size-modelling/" -c 10
+Rscript 02-exploratory-analysis.R -n 10000 -i 5000 -d "full_lsms_kfold_parallel_27_10_2022" -b "/user/work/lg14410/farm-size-modelling/" -c 4
 
 #for SAMPLE in  10000 20000  "MAX"
 

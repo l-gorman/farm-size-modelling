@@ -399,7 +399,7 @@ sink()
 #' to perform kfold ax
 #' 
   # plan(multiprocess)
-kfold_res <- kfold(conv_brm,dist_brm,lss_brm, chains=ncores, cores=ncores)
+kfold_res <- kfold(conv_brm,dist_brm,lss_brm, chains=opt$ncores, cores=opt$ncores)
 # kfold_res <- brms::kfold(conv_brm, dist_brm, lss_brm)
 # kfold_comparison <- kfold_res$diffs
 save(kfold_res, file = paste0(sub_folder,"/kfold_results.rda"))
