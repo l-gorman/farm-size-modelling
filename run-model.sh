@@ -30,7 +30,7 @@ module add languages/r/4.1.0
 export OMP_NUM_THREADS=5
 
 
-Rscript 02-exploratory-analysis.R -n 1000 -i 2000 -d "full_lsms_kfold_parallel_27_10_2022" -b "/user/work/lg14410/farm-size-modelling/" -c 5
+Rscript 02-exploratory-analysis.R -n 1000 -i 2000 -d "kfold_future_test" -b "/user/work/lg14410/farm-size-modelling/" -c 5
 
 #for SAMPLE in  10000 20000  "MAX"
 
