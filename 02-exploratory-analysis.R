@@ -7,6 +7,7 @@ library(parallel)
 library(optparse)
 library(magrittr)
 library(bayesplot)
+library(future)
 set.seed(404)
 
 
