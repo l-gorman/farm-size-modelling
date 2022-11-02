@@ -5,7 +5,7 @@
 #SBATCH --job-name=distributional-analysis
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=5
+#SBATCH --cpus-per-task=25
 #SBATCH --time=0-00:00:30
 #SBATCH --mem=36G
 
@@ -30,7 +30,7 @@ module add languages/r/4.1.0
 export OMP_NUM_THREADS=5
 
 
-Rscript 02-exploratory-analysis.R -n 1000 -i 2000 -d "kfold_future_test" -b "/user/work/lg14410/farm-size-modelling/" -c 5
+Rscript 02-exploratory-analysis.R -n 1000 -i 2000 -d "kfold_future_test" -b "/user/work/lg14410/farm-size-modelling/" -c 25
 
 #for SAMPLE in  10000 20000  "MAX"
 
