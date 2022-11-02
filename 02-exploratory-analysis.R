@@ -40,7 +40,8 @@ opt = parse_args(opt_parser);
 # )
 
 # ncores = 4
-  
+
+chains = 4
 
 if (opt$iter==2000){
   warmup <- 1000
@@ -173,8 +174,8 @@ sample <- 5000
 
 conv_brm <-brm(conv_fm, 
     data = sample_df, 
-    cores = opt$ncores,
-    chains = 4,
+    cores = chains,
+    chains = chains,
     control=list(adapt_delta = 0.8, max_treedepth=10),
     iter=opt$iter,
     warmup=warmup,
@@ -251,7 +252,8 @@ dist_fm <- bf(
 # get_prior(dist_fm,sample_df)
 dist_brm <- brm(dist_fm, 
                 data = sample_df,
-                cores = opt$ncores,
+                cores = chains,
+                chains = chains,
                 control=list(adapt_delta = 0.8, max_treedepth=10),
                 iter = opt$iter,
                 
@@ -326,7 +328,8 @@ lss_brm <- brm(lss_fm,
                  link_sigma = "log", 
                  link_alpha = "identity"),
                control=list(adapt_delta = 0.8, max_treedepth=10),
-               cores = opt$ncores,
+               cores = chains,
+               chains =  chains,
                iter = opt$iter,
                prior = c(
                  
@@ -398,8 +401,8 @@ sink()
 #' Could use the "groups" param
 #' to perform kfold ax
 #' 
-  # plan(multiprocess)
-kfold_res <- kfold(conv_brm,dist_brm,lss_brm, chains=opt$ncores, cores=opt$ncores)
+plan(multiprocess)
+kfold_res <- kfold(conv_brm,dist_brm,lss_brm, K = 5)
 # kfold_res <- brms::kfold(conv_brm, dist_brm, lss_brm)
 # kfold_comparison <- kfold_res$diffs
 save(kfold_res, file = paste0(sub_folder,"/kfold_results.rda"))
