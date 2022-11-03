@@ -14,7 +14,7 @@ set.seed(404)
 X <- cbind(1,runif(N, 0, 100)) # Generate N uniform random numbers between 0-100
 
 B_mu <- c(0.1, 0.5) # Intercept and coefficient
-B_sigma <- c(-3, 0.01) # Intercept and coefficient
+B_sigma <- c(-2, 0.01) # Intercept and coefficient
 B_nu <- c(-1,-0.01) # Intercept and coefficient
 B_tau <- c(0.01,0.01) # Intercept and coefficient
 
@@ -24,6 +24,17 @@ nu <- c(X %*% B_nu)
 tau <- c(exp(X %*% B_tau))
 
 Y <- rBCT(N, mu=mu, sigma=sigma, nu=nu, tau=tau) %>% tibble::as_tibble()
+
+
+B_mu <- c(0.1, 0.5) # Intercept and coefficient
+B_sigma <- c(-1, 0.05) # Intercept and coefficient
+B_nu <- c(1,0.01) # Intercept and coefficient
+
+mu <- c(X %*% B_mu)
+sigma <- c(exp(X %*% B_sigma))
+nu <- c(X %*% B_nu)
+
+Y <- rSN1(N, mu=mu, sigma=sigma, nu=nu) %>% tibble::as_tibble()
 
 # Setting Distributions Params for Coefficients
 all_data <- tibble::as_tibble(
@@ -58,70 +69,99 @@ ggplot(Y, aes(x=value))+
   geom_histogram()
 
 
+# flat_model <- gamlss(y~1, 
+#                      sigma.formula = ~1, 
+#                      nu.formula = ~1, 
+#                      tau.formula = ~1 ,
+#                      data =train_df,  
+#                      family=BCT(),
+#                      control = gamlss.control(n.cyc = 200)
+# )
+# 
+# location <- gamlss(y~X, 
+#                    sigma.formula = ~1, 
+#                    nu.formula = ~1, 
+#                    tau.formula = ~1 ,
+#                    data =train_df,  
+#                    family=BCT(),
+#                    control = gamlss.control(n.cyc = 200)
+# )
+# 
+# location_scale <- gamlss(y~X, 
+#                          sigma.formula =~X, 
+#                          nu.formula = ~1, 
+#                          tau.formula = ~1 ,
+#                          data =train_df,  
+#                          family=BCT(),
+#                          control = gamlss.control(n.cyc = 200)
+# )
+# 
+# location_scale_skew <- gamlss(y~X, 
+#                               sigma.formula =~X, 
+#                               nu.formula = ~X, 
+#                               tau.formula = ~1 ,
+#                               data =train_df,  
+#                               family=BCT(),
+#                               control = gamlss.control(n.cyc = 200)
+# )
+# 
+# location_scale_skew_kurtosis <- gamlss(y~X, 
+#                                        sigma.formula =~X, 
+#                                        nu.formula = ~X, 
+#                                        tau.formula = ~X ,
+#                                        data =train_df,  
+#                                        family=BCT(),
+#                                        control = gamlss.control(n.cyc = 200)
+# )
 flat_model <- gamlss(y~1, 
                      sigma.formula = ~1, 
                      nu.formula = ~1, 
-                     tau.formula = ~1 ,
                      data =train_df,  
-                     family=BCT(),
+                     family=SN1(),
                      control = gamlss.control(n.cyc = 200)
 )
 
 location <- gamlss(y~X, 
                    sigma.formula = ~1, 
                    nu.formula = ~1, 
-                   tau.formula = ~1 ,
                    data =train_df,  
-                   family=BCT(),
+                   family=SN1(),
                    control = gamlss.control(n.cyc = 200)
 )
 
 location_scale <- gamlss(y~X, 
                          sigma.formula =~X, 
                          nu.formula = ~1, 
-                         tau.formula = ~1 ,
                          data =train_df,  
-                         family=BCT(),
+                         family=SN1(),
                          control = gamlss.control(n.cyc = 200)
 )
 
 location_scale_skew <- gamlss(y~X, 
                               sigma.formula =~X, 
                               nu.formula = ~X, 
-                              tau.formula = ~1 ,
                               data =train_df,  
-                              family=BCT(),
+                              family=SN1(),
                               control = gamlss.control(n.cyc = 200)
 )
 
-location_scale_skew_kurtosis <- gamlss(y~X, 
-                                       sigma.formula =~X, 
-                                       nu.formula = ~X, 
-                                       tau.formula = ~X ,
-                                       data =train_df,  
-                                       family=BCT(),
-                                       control = gamlss.control(n.cyc = 200)
-)
+
 
 # Model Summaries
 
-flat_model
-location
-location_scale
-location_scale_skew
-location_scale_skew_kurtosis
+
 
 summary(flat_model)
 summary(location)
 summary(location_scale)
 summary(location_scale_skew)
-summary(location_scale_skew_kurtosis)
+# summary(location_scale_skew_kurtosis)
 
 plot(flat_model)
 plot(location)
 plot(location_scale)
 plot(location_scale_skew)
-plot(location_scale_skew_kurtosis)
+# plot(location_scale_skew_kurtosis)
 
 
 
@@ -145,38 +185,53 @@ centile_plot <- function(fit,
   
   centiles$centile_name <- paste0("Q",centiles$centile)
   
-  colours <- RColorBrewer::brewer.pal(n=length(quantiles),name = "Paired")
+  colours <- RColorBrewer::brewer.pal(n=length(quantiles)-1,name = "Paired")
   
   
+  centile_conversions <- tibble(
+    centile_min = quantiles[-length(quantiles)],
+    centile_max = quantiles[-1]
+    
+    
+  )
+  
+  centiles_min <- centiles %>% merge(centile_conversions, by.x="centile_name", by.y="centile_min")
+  centiles_max <- centiles %>% merge(centile_conversions, by.x="centile_name", by.y="centile_max")
+  
+  centiles_min <- centiles_min %>% 
+    rename(min_value=value) %>% 
+    rename(centile_min=centile_name)
+  
+  centiles_max <- centiles_max %>% 
+    rename(max_value=value)%>% 
+    rename(centile_max=centile_name)
+  
+  centiles_min_max <- centiles_min %>% merge(centiles_max, by = c("centile_min"="centile_min", "centile_max"="centile_max","x"="x"))
   
   
   
   prediction_plot <- ggplot()
   prediction_plot <- prediction_plot+
     geom_point(data=test_data, aes(x=X,y=y, shape="Data Point"), color="dodgerblue4") +
-    scale_shape_manual("",values=c(16))+
-    ylim(c(0,ylim))
+    scale_shape_manual("",values=c(16))
   
   prediction_plot <- prediction_plot + 
     geom_line(data=centiles[centiles$centile==50,],aes(x=x, y=value, color="Estimate"))+
     scale_colour_manual(c("",""),values=c("black","black"))
   
   
-  for (quantile in 1:length(quantiles)){
-    if (quantile!=1){
-      min_df <- centiles[centiles$centile_name==quantiles[quantile - 1],c("x","value")] %>% rename(min_value=value)
-      
-      max_df <- centiles[centiles$centile_name==quantiles[quantile],c("x","value")]%>% rename(max_value=value)
-      
-      temp_df <- min_df %>% merge(max_df, by="x", all.x = T, all.y = F)
-      prediction_plot <- prediction_plot +
-        geom_ribbon(data=temp_df,aes(x=x, ymax=max_value, ymin=min_value),  fill=colours[quantile],alpha=0.5)
-      
-      # blank_plot()+geom_ribbon(data=temp_df,aes(x=x, ymax=max_value, ymin=min_value),  fill=colours[quantile],alpha=0.5)
-      
-      
-    }
-  }
+  
+  prediction_plot <- prediction_plot +
+    geom_ribbon(data=centiles_min_max,aes(x=x, ymax=max_value, ymin=min_value, fill=centile_min), alpha=0.5)
+  
+  
+
+  values <- colours 
+  names(values) <-centile_conversions$centile_min
+  prediction_plot <- prediction_plot +
+    scale_fill_manual(name="Quantiles",values=values, labels=paste0(centile_conversions$centile_min, " - ",centile_conversions$centile_max)) 
+  ylim(ylim)
+  
   prediction_plot
   return(prediction_plot)
   
@@ -212,11 +267,11 @@ centile_plot <- function(fit,
   
 }
 
-centile_plot(fit = flat_model,test_data = train_df,ylim=350)
-centile_plot(fit = location,test_data = train_df,ylim=350)
-centile_plot(fit = location_scale,test_data = train_df,ylim=400)
-centile_plot(fit = location_scale_skew,test_data = train_df,ylim=400)
-centile_plot(fit = location_scale_skew_kurtosis,test_data = train_df,ylim=600)
+centile_plot(fit = flat_model,test_data = train_df,ylim=c(-100,300))
+centile_plot(fit = location,test_data = train_df,ylim=c(-100,300))
+centile_plot(fit = location_scale,test_data = train_df,ylim=c(-100,300))
+centile_plot(fit = location_scale_skew,test_data = train_df,ylim=c(-100,300))
+# centile_plot(fit = location_scale_skew_kurtosis,test_data = train_df,ylim=600)
 
 
 
