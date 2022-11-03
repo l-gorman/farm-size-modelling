@@ -63,3 +63,78 @@ for (column in c(land_cover_columns,aez_columns,x)){
   
 }
 
+table(complete.cases(final_df))
+colSums(is.na(final_df))
+
+# Testing with Skew Normal Model ------------------------------------------
+
+gamlss::gam
+
+formula <- as.formula(paste0(" ~ ", paste0(x, collapse=" + ")))
+y_formula <- as.formula(paste0(paste0("farm_size_ha ~ ", paste0(x, collapse=" + "))))
+
+
+flat_model <- gamlss(farm_size_ha ~1, 
+       sigma.formula = ~1, 
+       nu.formula = ~1, 
+       tau.formula = ~1,
+       data =final_df[,c(x,"farm_size_ha")],  
+       family=BCT(),
+       control = gamlss.control(n.cyc = 200)
+)
+plot(flat_model)
+
+location_model <- gamlss(y_formula, 
+                     sigma.formula =~1, 
+                     nu.formula = ~1, 
+                     tau.formula = ~1,
+                     data =final_df[,c(x,"farm_size_ha")],  
+                       family=BCTo(),
+                     control = gamlss.control(n.cyc = 200)
+)
+
+plot(location_model)
+
+
+location_scale_model <- gamlss(y_formula, 
+                         sigma.formula = formula, 
+                         nu.formula = ~1, 
+                         tau.formula = ~1,
+                         data =final_df[,c(x,"farm_size_ha")],  
+                         family=BCTo(),
+                         control = gamlss.control(n.cyc = 200)
+)
+plot(location_scale_model)
+
+location_scale_skew_model <- gamlss(y_formula, 
+                               sigma.formula = formula, 
+                               nu.formula =  formula, 
+                               tau.formula = ~1,
+                               data =final_df[,c(x,"farm_size_ha")],  
+                               family=BCTo(),
+                               control = gamlss.control(n.cyc = 200)
+)
+plot(location_scale_skew_model)
+
+location_scale_skew_kurtosis_model <- gamlss(y_formula, 
+                                    sigma.formula = formula, 
+                                    nu.formula =  formula, 
+                                    tau.formula = formula,
+                                    data =final_df[,c(x,"farm_size_ha")],  
+                                    family=BCTo(),
+                                    control = gamlss.control(n.cyc = 200)
+)
+plot(location_scale_skew_kurtosis_model)
+summary(location_scale_skew_kurtosis_model)
+
+
+
+
+
+
+
+
+
+
+
+

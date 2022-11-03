@@ -282,4 +282,3 @@ centile_plot(fit = location_scale_skew,test_data = train_df,ylim=c(-100,300))
 
 
 
-gamlss::centiles
