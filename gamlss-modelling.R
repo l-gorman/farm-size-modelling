@@ -113,7 +113,6 @@ colSums(is.na(final_df))
 
 # Testing with Skew Normal Model ------------------------------------------
 
-gamlss::gam
 
 formula <- as.formula(paste0(" ~ ", paste0(x, collapse=" + ")))
 y_formula <- as.formula(paste0(paste0("farm_size_ha ~ ", paste0(x, collapse=" + "))))
