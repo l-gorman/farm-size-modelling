@@ -42,6 +42,9 @@ option_list = list(
   
 )
 
+opt_parser = OptionParser(option_list=option_list);
+opt = parse_args(opt_parser);
+
 main_folder <- paste0(opt$base,"outputs/",opt$directory)
 dir.create(main_folder, showWarnings = F)
 
