@@ -30,5 +30,5 @@ module add languages/r/4.1.0
 export OMP_NUM_THREADS=10
 
 
-Rscript "gamlss-modelling.R" -i 2000 -d "kfold_future_test" -b "/user/work/lg14410/farm-size-modelling/" -c 10
+Rscript "gamlss-modelling.R" -i 2000 -d "gamlss-03-11-2022" -b "/user/work/lg14410/farm-size-modelling/" -c 10
 
