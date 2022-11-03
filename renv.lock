@@ -496,6 +496,38 @@
         "parallelly"
       ]
     },
+    "gamlss": {
+      "Package": "gamlss",
+      "Version": "5.4-3",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "c9aab87e62efa7d2ded9fbd4af22e1aa",
+      "Requirements": [
+        "MASS",
+        "gamlss.data",
+        "gamlss.dist",
+        "nlme",
+        "survival"
+      ]
+    },
+    "gamlss.data": {
+      "Package": "gamlss.data",
+      "Version": "6.0-2",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "5657057e89088a77474f6380bcb2e20d",
+      "Requirements": []
+    },
+    "gamlss.dist": {
+      "Package": "gamlss.dist",
+      "Version": "6.0-5",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "6978133d12632438516a2abd95a3f630",
+      "Requirements": [
+        "MASS"
+      ]
+    },
     "generics": {
       "Package": "generics",
       "Version": "0.1.3",
@@ -1005,6 +1037,17 @@
       "Hash": "8b93531308c01ad0e56d9eadcc0c4fcd",
       "Requirements": []
     },
+    "purrr": {
+      "Package": "purrr",
+      "Version": "0.3.5",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "54842a2443c76267152eface28d9e90a",
+      "Requirements": [
+        "magrittr",
+        "rlang"
+      ]
+    },
     "rappdirs": {
       "Package": "rappdirs",
       "Version": "0.3.3",
@@ -1235,6 +1278,16 @@
         "stringi"
       ]
     },
+    "survival": {
+      "Package": "survival",
+      "Version": "3.4-0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "04411ae66ab4659230c067c32966fc20",
+      "Requirements": [
+        "Matrix"
+      ]
+    },
     "tensorA": {
       "Package": "tensorA",
       "Version": "0.36.2",
@@ -1269,6 +1322,26 @@
         "pillar",
         "pkgconfig",
         "rlang",
+        "vctrs"
+      ]
+    },
+    "tidyr": {
+      "Package": "tidyr",
+      "Version": "1.2.1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "cdb403db0de33ccd1b6f53b83736efa8",
+      "Requirements": [
+        "cpp11",
+        "dplyr",
+        "ellipsis",
+        "glue",
+        "lifecycle",
+        "magrittr",
+        "purrr",
+        "rlang",
+        "tibble",
+        "tidyselect",
         "vctrs"
       ]
     },

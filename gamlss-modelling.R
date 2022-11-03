@@ -1,9 +1,51 @@
-library(gamlss)
-library()
+#' See here for thorough description
+#' of GAMLSS method and the 
+#' fitting algorithm
+#' 
+#' https://rss.onlinelibrary.wiley.com/doi/epdf/10.1111/j.1467-9876.2005.00510.x
+#' 
+#' See pg 59 here for a list of
+#' the continuous distributions 
+#' available under gamlss
+#' 
+#' https://www.gamlss.com/wp-content/uploads/2018/01/DistributionsForModellingLocationScaleandShape.pdf
+#' 
+#' See here for information on model selection with GAMLSS
+#' 
+#' http://www.gamlss.com/wp-content/uploads/2018/01/Model-Selection.pdf
+#' 
+#' Paper on Model Comparison here
+#' https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8073334/
 
+library(gamlss)
+library(optparse)
+library(readr)
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+
+
+option_list = list(
+  make_option(c("-i", "--iter"),  type='integer',
+              help="Iterations"),
+  # make_option(c("-n", "--number"),  type='integer',
+  #             help="Number of hhs to sample"),
+  make_option(c("-b", "--base"), type='character',
+              help="Base directory where files will be loaded from"),
+  make_option(c("-d", "--directory"), type='character',
+              help="The directory where the file will be saved"),
+  make_option(c("-c", "--ncores"), type='character',
+              help="The number of chains/cores")
+  
+  
+  
+  
+)
+
+main_folder <- paste0(opt$base,"outputs/",opt$directory)
+dir.create(main_folder, showWarnings = F)
 
 final_df <- readr::read_csv(paste0(opt$base,"prepared-data/final-modelling-dataset.csv"))
-
 
 land_cover_columns <-c("evergreen_needle_leaf",
                        "evergreen_broad_leaf",
@@ -80,9 +122,13 @@ flat_model <- gamlss(farm_size_ha ~1,
        tau.formula = ~1,
        data =final_df[,c(x,"farm_size_ha")],  
        family=BCT(),
-       control = gamlss.control(n.cyc = 200)
+       control = gamlss.control(n.cyc = opt$iter)
 )
-plot(flat_model)
+# plot(flat_model)
+# summary(flat_model)
+
+save(flat_model, file = paste0(main_folder,"/flat_model.rda"))
+
 
 location_model <- gamlss(y_formula, 
                      sigma.formula =~1, 
@@ -90,11 +136,13 @@ location_model <- gamlss(y_formula,
                      tau.formula = ~1,
                      data =final_df[,c(x,"farm_size_ha")],  
                        family=BCTo(),
-                     control = gamlss.control(n.cyc = 200)
+                     control = gamlss.control(n.cyc = opt$iter)
 )
 
-plot(location_model)
+# plot(location_model)
+# summary(location_model)
 
+save(location_model, file = paste0(main_folder,"/location_model.rda"))
 
 location_scale_model <- gamlss(y_formula, 
                          sigma.formula = formula, 
@@ -102,9 +150,12 @@ location_scale_model <- gamlss(y_formula,
                          tau.formula = ~1,
                          data =final_df[,c(x,"farm_size_ha")],  
                          family=BCTo(),
-                         control = gamlss.control(n.cyc = 200)
+                         control = gamlss.control(n.cyc = opt$iter)
 )
-plot(location_scale_model)
+# plot(location_scale_model)
+# summary(location_scale_model)
+save(location_scale_model, file = paste0(main_folder,"/location_scale_model.rda"))
+
 
 location_scale_skew_model <- gamlss(y_formula, 
                                sigma.formula = formula, 
@@ -112,9 +163,12 @@ location_scale_skew_model <- gamlss(y_formula,
                                tau.formula = ~1,
                                data =final_df[,c(x,"farm_size_ha")],  
                                family=BCTo(),
-                               control = gamlss.control(n.cyc = 200)
+                               control = gamlss.control(n.cyc = opt$iter)
 )
-plot(location_scale_skew_model)
+# plot(location_scale_skew_model)
+# summary(location_scale_skew_model)
+save(location_scale_skew_model, file = paste0(main_folder,"/location_scale_skew_model.rda"))
+
 
 location_scale_skew_kurtosis_model <- gamlss(y_formula, 
                                     sigma.formula = formula, 
@@ -122,10 +176,20 @@ location_scale_skew_kurtosis_model <- gamlss(y_formula,
                                     tau.formula = formula,
                                     data =final_df[,c(x,"farm_size_ha")],  
                                     family=BCTo(),
-                                    control = gamlss.control(n.cyc = 200)
+                                    control = gamlss.control(n.cyc = opt$iter)
 )
-plot(location_scale_skew_kurtosis_model)
-summary(location_scale_skew_kurtosis_model)
+# plot(location_scale_skew_kurtosis_model)
+# summary(location_scale_skew_kurtosis_model)
+save(location_scale_skew_kurtosis_model, file = paste0(main_folder,"/location_scale_skew_kurtosis_model.rda"))
+
+
+
+# Saving Model Comparison ----------------------------------------------------------
+location_scale_skew_kurtosis_model_selection <- gamlss::stepGAICAll.A(location_scale_skew_kurtosis_model,parallel = "multicore",ncpus = 7)
+
+save(location_scale_skew_kurtosis_model_selection, file = paste0(main_folder,"/location_scale_skew_kurtosis_model_selection.rda"))
+
+print("Complete")
 
 
 
