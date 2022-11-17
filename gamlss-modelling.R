@@ -25,25 +25,33 @@ library(dplyr)
 library(ggplot2)
 
 
-option_list = list(
-  make_option(c("-i", "--iter"),  type='integer',
-              help="Iterations"),
-  # make_option(c("-n", "--number"),  type='integer',
-  #             help="Number of hhs to sample"),
-  make_option(c("-b", "--base"), type='character',
-              help="Base directory where files will be loaded from"),
-  make_option(c("-d", "--directory"), type='character',
-              help="The directory where the file will be saved"),
-  make_option(c("-c", "--ncores"), type='character',
-              help="The number of chains/cores")
-  
-  
-  
-  
-)
+# option_list = list(
+#   make_option(c("-i", "--iter"),  type='integer',
+#               help="Iterations"),
+#   # make_option(c("-n", "--number"),  type='integer',
+#   #             help="Number of hhs to sample"),
+#   make_option(c("-b", "--base"), type='character',
+#               help="Base directory where files will be loaded from"),
+#   make_option(c("-d", "--directory"), type='character',
+#               help="The directory where the file will be saved"),
+#   make_option(c("-c", "--ncores"), type='character',
+#               help="The number of chains/cores")
+#   
+#   
+#   
+#   
+# )
+# 
+# opt_parser = OptionParser(option_list=option_list);
+# opt = parse_args(opt_parser);
 
-opt_parser = OptionParser(option_list=option_list);
-opt = parse_args(opt_parser);
+# 
+opt <- list(
+  iter=200,
+  directory="gamlss_test",
+  base="./",
+  ncores="4"
+)
 
 main_folder <- paste0(opt$base,"outputs/",opt$directory)
 dir.create(main_folder, showWarnings = F)
@@ -187,7 +195,11 @@ save(location_scale_skew_kurtosis_model, file = paste0(main_folder,"/location_sc
 
 
 # Saving Model Comparison ----------------------------------------------------------
-location_scale_skew_kurtosis_model_selection <- gamlss::stepGAICAll.A(location_scale_skew_kurtosis_model,parallel = "multicore",ncpus = 7)
+
+location_scale_skew_kurtosis_model_selection <- gamlss::stepGAICAll.A(flat_model,
+                                                                      parallel = "multicore",
+                                                                      ncpus = 7,
+                                                                      scope=list(lower=~1,upper=formula))
 
 save(location_scale_skew_kurtosis_model_selection, file = paste0(main_folder,"/location_scale_skew_kurtosis_model_selection.rda"))
 
