@@ -48,7 +48,7 @@ library(ggplot2)
 # 
 opt <- list(
   iter=200,
-  directory="gamlss_test",
+  directory="non_linear_test",
   base="./",
   ncores="4"
 )
@@ -122,18 +122,24 @@ colSums(is.na(final_df))
 # Testing with Skew Normal Model ------------------------------------------
 
 
+formula <- as.formula(paste0(" ~ ", paste0("lo(",x,")", collapse=" + ")))
+y_formula <- as.formula(paste0(paste0("farm_size_ha ~ ", paste0("lo(",x,")", collapse=" + "))))
+
+
 formula <- as.formula(paste0(" ~ ", paste0(x, collapse=" + ")))
 y_formula <- as.formula(paste0(paste0("farm_size_ha ~ ", paste0(x, collapse=" + "))))
 
 
 flat_model <- gamlss(farm_size_ha ~1, 
-       sigma.formula = ~1, 
-       nu.formula = ~1, 
-       tau.formula = ~1,
-       data =final_df[,c(x,"farm_size_ha")],  
-       family=BCT(),
-       control = gamlss.control(n.cyc = opt$iter)
+                     sigma.formula = ~1, 
+                     nu.formula = ~1, 
+                     tau.formula = ~1,
+                     data =final_df[,c(x,"farm_size_ha")],  
+                     family=BCTo(),
+                     control = gamlss.control(n.cyc = opt$iter)
 )
+
+
 # plot(flat_model)
 # summary(flat_model)
 
@@ -141,13 +147,17 @@ save(flat_model, file = paste0(main_folder,"/flat_model.rda"))
 
 
 location_model <- gamlss(y_formula, 
-                     sigma.formula =~1, 
-                     nu.formula = ~1, 
-                     tau.formula = ~1,
-                     data =final_df[,c(x,"farm_size_ha")],  
-                       family=BCTo(),
-                     control = gamlss.control(n.cyc = opt$iter)
+                         sigma.formula =~1, 
+                         nu.formula = ~1, 
+                         tau.formula = ~1,
+                         data =final_df[,c(x,"farm_size_ha")],  
+                         family=BCTo(),
+                         control = gamlss.control(n.cyc = opt$iter)
 )
+
+
+
+
 
 # plot(location_model)
 # summary(location_model)
@@ -155,25 +165,27 @@ location_model <- gamlss(y_formula,
 save(location_model, file = paste0(main_folder,"/location_model.rda"))
 
 location_scale_model <- gamlss(y_formula, 
-                         sigma.formula = formula, 
-                         nu.formula = ~1, 
-                         tau.formula = ~1,
-                         data =final_df[,c(x,"farm_size_ha")],  
-                         family=BCTo(),
-                         control = gamlss.control(n.cyc = opt$iter)
+                               sigma.formula = formula, 
+                               nu.formula = ~1, 
+                               tau.formula = ~1,
+                               data =final_df[,c(x,"farm_size_ha")],  
+                               family=BCTo(),
+                               control = gamlss.control(n.cyc = opt$iter)
 )
+
+
 # plot(location_scale_model)
 # summary(location_scale_model)
 save(location_scale_model, file = paste0(main_folder,"/location_scale_model.rda"))
 
 
 location_scale_skew_model <- gamlss(y_formula, 
-                               sigma.formula = formula, 
-                               nu.formula =  formula, 
-                               tau.formula = ~1,
-                               data =final_df[,c(x,"farm_size_ha")],  
-                               family=BCTo(),
-                               control = gamlss.control(n.cyc = opt$iter)
+                                    sigma.formula = formula, 
+                                    nu.formula =  formula, 
+                                    tau.formula = ~1,
+                                    data =final_df[,c(x,"farm_size_ha")],  
+                                    family=BCTo(),
+                                    control = gamlss.control(n.cyc = opt$iter)
 )
 # plot(location_scale_skew_model)
 # summary(location_scale_skew_model)
@@ -181,12 +193,12 @@ save(location_scale_skew_model, file = paste0(main_folder,"/location_scale_skew_
 
 
 location_scale_skew_kurtosis_model <- gamlss(y_formula, 
-                                    sigma.formula = formula, 
-                                    nu.formula =  formula, 
-                                    tau.formula = formula,
-                                    data =final_df[,c(x,"farm_size_ha")],  
-                                    family=BCTo(),
-                                    control = gamlss.control(n.cyc = opt$iter)
+                                             sigma.formula = formula, 
+                                             nu.formula =  formula, 
+                                             tau.formula = formula,
+                                             data =final_df[,c(x,"farm_size_ha")],  
+                                             family=BCTo(),
+                                             control = gamlss.control(n.cyc = opt$iter)
 )
 # plot(location_scale_skew_kurtosis_model)
 # summary(location_scale_skew_kurtosis_model)
@@ -196,10 +208,37 @@ save(location_scale_skew_kurtosis_model, file = paste0(main_folder,"/location_sc
 
 # Saving Model Comparison ----------------------------------------------------------
 
-location_scale_skew_kurtosis_model_selection <- gamlss::stepGAICAll.A(flat_model,
-                                                                      parallel = "multicore",
-                                                                      ncpus = 7,
-                                                                      scope=list(lower=~1,upper=formula))
+# location_scale_skew_kurtosis_model_selection <- gamlss::stepGAICAll.A(flat_model,
+#                                                                       parallel = "multicore",
+#                                                                       ncpus = 7,
+#                                                                       scope=list(lower=~1,upper=formula))
+
+gs<-gamlss.scope(model.frame(y_formula, data=final_df[,c(x,"farm_size_ha")]))
+location_scale_skew_kurtosis_model_selection <- gamlss::stepGAIC.CH(flat_model,
+                                                                    parallel = "multicore",
+                                                                    ncpus = 7,
+                                                                    scope=gs)
+
+location_scale_skew_kurtosis_model_selection <- gamlss::stepGAIC(location_scale_skew_kurtosis_model_selection,
+                      parallel = "multicore",
+                      what="sigma",
+                      ncpus = 7,
+                      
+                      scope=formula)
+
+location_scale_skew_kurtosis_model_selection <- gamlss::stepGAIC(location_scale_skew_kurtosis_model_selection,
+                                                                 parallel = "multicore",
+                                                                 what="nu",
+                                                                 ncpus = 7,
+                                                                 
+                                                                 scope=formula)
+
+location_scale_skew_kurtosis_model_selection <- gamlss::stepGAIC(location_scale_skew_kurtosis_model_selection,
+                                                                 parallel = "multicore",
+                                                                 what="tau",
+                                                                 ncpus = 7,
+                                                                 
+                                                                 scope=formula)
 
 save(location_scale_skew_kurtosis_model_selection, file = paste0(main_folder,"/location_scale_skew_kurtosis_model_selection.rda"))
 

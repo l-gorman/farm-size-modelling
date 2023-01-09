@@ -1,3 +1,13 @@
+# Modelling Farm Size Distributions
+
+Code for an analysis which understands whether distributional
+modelling methods can help us understand the relationship
+between farm size distributions and satellite (derived) 
+indicators
+
+## Data preperation
+
+
 
 For running on BC4, you can run:
 
