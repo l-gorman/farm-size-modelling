@@ -1,0 +1,47 @@
+[
+    {
+        "ipums": "Ethiopia",
+        "iso_2": "ET",
+        "iso_3": "ETH"
+    },
+    {
+        "ipums": "Kenya",
+        "iso_2": "KE",
+        "iso_3": "KEN"
+    },
+    {
+        "ipums": "Tanzania",
+        "iso_2": "TZ",
+        "iso_3": "TZA"
+    },
+    {
+        "ipums": "Uganda",
+        "iso_2": "UG",
+        "iso_3": "UGA"
+    },
+    {
+        "ipums": "Burkina Faso",
+        "iso_2": "BF",
+        "iso_3": "BFA"
+    },
+    {
+        "ipums": "Mali",
+        "iso_2": "ML",
+        "iso_3": "MLI"
+    },
+    {
+        "ipums": "Ghana",
+        "iso_2": "GH",
+        "iso_3": "GHA"
+    },
+    {
+        "ipums": "Nigeria",
+        "iso_2": "NG",
+        "iso_3": "NGA"
+    },
+    {
+        "ipums": "Rwanda",
+        "iso_2": "RW",
+        "iso_3": "RWA"
+    }
+]

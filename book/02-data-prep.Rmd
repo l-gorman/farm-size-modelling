@@ -1,0 +1,16 @@
+# Data Preperation
+
+
+## Earth Engine Data
+
+## FAO GAEZ Data
+
+## Survey Data
+
+### LSMS Point Data
+
+* Merge all projects together (data prep scripts)
+
+### RHoMIS Data
+
+## Merging
