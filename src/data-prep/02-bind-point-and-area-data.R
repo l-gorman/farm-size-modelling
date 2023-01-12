@@ -37,7 +37,7 @@ library(tidyr)
 library(tibble)
 library(jsonlite)
 library(XML)
-# library(fastDummies)
+library(fastDummies)
 library(magrittr)
 
 # Spatial Packages
@@ -190,7 +190,7 @@ convert_aez_classes <- function(aez_df,
   
   
   
-  result <- dummy_cols(result, "name", remove_selected_columns=T)
+  result <- fastDummies::dummy_cols(result, "name", remove_selected_columns=T)
   colnames(result) <- colnames(result) %>% 
     gsub("name_",paste0(aez_colname,"_"),.)
   
@@ -377,6 +377,18 @@ continuous_pixel_stat <- function(polygon_feature,
 lsms_data <- readr::read_csv("data/prepped-data/lsms/farm-size-all-points.csv")
 lsms_data$index <- c(1:nrow(lsms_data))
 
+
+
+rhomis_data <- readr::read_csv("data/raw-data/rhomis/processed_data.csv", na=c("-999","NA", "n/a"))
+indicator_data <- readr::read_csv("data/raw-data/rhomis/indicator_data.csv", na=c("-999","NA", "n/a"))
+indicator_data <- indicator_data %>% merge(rhomis_data[c("id_unique","gps_lat", "gps_lon")],by="id_unique")
+indicator_data <- indicator_data[!is.na(indicator_data$gps_lat) & !is.na(indicator_data$gps_lon),]
+indicator_data <- st_as_sf(indicator_data, coords = c("gps_lon", "gps_lat"), 
+                           crs = 4326, agr = "constant", remove = F)
+
+indicator_data$index <- c(1:nrow(indicator_data))
+
+
 # Point Stats -------------------------------------------------------------
 
 
@@ -468,12 +480,20 @@ adjusted_length_growing_period <- projectRaster(adjusted_length_growing_period,a
 
 # Point estimates
 r_stack <- raster::stack(aez_33_classes,adjusted_length_growing_period)
-rasValue=raster::extract(r_stack, lsms_data[c("longitude","latitude")]) %>% tibble::as_tibble()
-colnames(rasValue) <- gsub("X33_classes", "AEZ_Classes_33", colnames(rasValue))
-rasValue$AEZ_Classes_33 <- as.integer(rasValue$AEZ_Classes_33)
-rasValue <- convert_aez_classes(rasValue,
+
+rasValue_lsms=raster::extract(r_stack, lsms_data[c("longitude","latitude")]) %>% tibble::as_tibble()
+colnames(rasValue_lsms) <- gsub("X33_classes", "AEZ_Classes_33", colnames(rasValue_lsms))
+rasValue_lsms$AEZ_Classes_33 <- as.integer(rasValue_lsms$AEZ_Classes_33)
+rasValue_lsms <- convert_aez_classes(rasValue_lsms,
                                 "AEZ_Classes_33",
                                 aez_33_class_conversions)
+
+rasValue_rhomis=raster::extract(r_stack, indicator_data[c("gps_lon","gps_lat")]) %>% tibble::as_tibble()
+colnames(rasValue_rhomis) <- gsub("X33_classes", "AEZ_Classes_33", colnames(rasValue_rhomis))
+rasValue_rhomis$AEZ_Classes_33 <- as.integer(rasValue_rhomis$AEZ_Classes_33)
+rasValue_rhomis <- convert_aez_classes(rasValue_rhomis,
+                                     "AEZ_Classes_33",
+                                     aez_33_class_conversions)
 
 # Zonal Estimates
 
@@ -558,30 +578,42 @@ lsms_geo  <- st_as_sf(lsms_data, coords = c("longitude", "latitude"),
                       crs = 4326, agr = "constant", remove = F)
 
 
-joined_df <- st_join(x=lsms_geo, 
+joined_df_lsms <- st_join(x=lsms_geo, 
                      y=fao_level_2,
                      left=T)
+
+joined_df_rhomis <- st_join(x=indicator_data,
+                            y=fao_level_2,
+                            left=T)
 
 # sf_use_s2(F)
 # st_join(x=lsms_geo, 
 #         y=dixons_farm_categories,
 #         left=T)
 
-joined_df <- joined_df %>%  merge(rasValue, by="index")#dplyr::bind_cols(rasValue)
-joined_df <- joined_df[!is.na(joined_df$ADM0_CODE),]
+joined_df_lsms <- joined_df_lsms %>%  merge(rasValue_lsms, by="index")#dplyr::bind_cols(rasValue)
+joined_df_lsms <- joined_df_lsms[!is.na(joined_df_lsms$ADM0_CODE),]
+
+joined_df_rhomis <- joined_df_rhomis %>%  merge(rasValue_rhomis, by="index")#dplyr::bind_cols(rasValue)
+joined_df_rhomis <- joined_df_rhomis[!is.na(joined_df_rhomis$ADM0_CODE),]
 # joined_df <- joined_df[,colnames(joined_df) %in% "index...95"==F]
 
 
 
-columns_to_merge <- c("index",colnames(fao_level_2),colnames(rasValue), "longitude", "latitude", "geometry")
+columns_to_merge_lsms <- c("index",colnames(fao_level_2),colnames(rasValue_lsms), "longitude", "latitude", "geometry")
+columns_to_merge_rhomis <- c("index",colnames(fao_level_2),colnames(rasValue_rhomis), "gps_lon", "gps_lat", "geometry")
+
+
 # ind_data <- readr::read_csv("./data/rhomis-data/indicator_data/indicator_data.csv")
 # ind_data <- ind_data[ind_data$id_unique %in% joined_df$id_unique,]
 
-lsms_data <- lsms_data %>% merge(joined_df[columns_to_merge], by="index")
+# lsms_data <- lsms_data %>% merge(joined_df_lsms[columns_to_merge_lsms], by="index")
+# indicator_data <- as.data.frame(indicator_data) %>% merge(joined_df_rhomis[columns_to_merge_rhomis], by="index")
+# 
 
 
-
-readr::write_csv(joined_df, paste0(opt$directory,"data/prepared-data/lsms-ee-gaez.csv"))
+readr::write_csv(joined_df_lsms, "data/prepped-data/lsms-ee-gaez.csv")
+readr::write_csv(joined_df_rhomis,"data/prepped-data//rhomis-ee-gaez.csv")
 
 # readr::write_csv(joined_df, "data/prepared-data/rhomis-ee-gaez.csv")
 # readr::write_csv(ind_data, "data/prepared-data/rhomis-indicator-ee-gaez.csv")
@@ -590,10 +622,10 @@ readr::write_csv(joined_df, paste0(opt$directory,"data/prepared-data/lsms-ee-gae
 
 # readr::write_csv(joined_df, "data/prepared-data/rhomis-ee-gaez.csv")
 
-if (file.exists(paste0(opt$directory,"data/prepared-data/fao_level_2.geojson"))){
-  file.remove(paste0(opt$directory,"data/prepared-data/fao_level_2.geojson"))
+if (file.exists("data/prepped-data/fao_level_2.geojson")){
+  file.remove("data/prepped-data/fao_level_2.geojson")
 }
-st_write(fao_level_2, paste0(opt$directory,"data/prepared-data/fao_level_2.geojson"))
+st_write(fao_level_2, "data/prepped-data/fao_level_2.geojson")
 
 
 
