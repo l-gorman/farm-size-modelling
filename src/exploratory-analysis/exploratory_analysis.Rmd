@@ -129,15 +129,15 @@ fao_level_2$geo_id <- paste0(fao_level_2$ADM0_CODE, "_",
 
 ```{r, message=F, warning=F}
 
-outlier_filter <- quantile(indicator_data[["land_cultivated_ha"]], probs = c(0.01,0.99))
-
-table(indicator_data[c("land_cultivated_ha")]==outlier_filter[1]) # 236 with 0 land cult (investigate further)
-table(indicator_data[c("land_cultivated_ha")]>outlier_filter[2]) # 201 with land cult greater than 99th percentile (24th)
-
-
-indicator_data <- indicator_data[indicator_data[c("land_cultivated_ha")] != outlier_filter[1] & indicator_data[c("land_cultivated_ha")] <= outlier_filter[2],]
-
-
+# outlier_filter <- quantile(indicator_data[["land_cultivated_ha"]], probs = c(0.01,0.99))
+# 
+# table(indicator_data[c("land_cultivated_ha")]==outlier_filter[1]) # 236 with 0 land cult (investigate further)
+# table(indicator_data[c("land_cultivated_ha")]>outlier_filter[2]) # 201 with land cult greater than 99th percentile (24th)
+# 
+# 
+# indicator_data <- indicator_data[indicator_data[c("land_cultivated_ha")] != outlier_filter[1] & indicator_data[c("land_cultivated_ha")] <= outlier_filter[2],]
+# 
+# 
 
 
 
@@ -150,6 +150,39 @@ colnames(counts_per_area) <- c('geo_id', "Freq")
 ggplot(counts_per_area, aes(x=Freq))+
   geom_histogram()
 
+
+
+plot_summary_subnational_area <- indicator_data %>% 
+  group_by(geo_id,iso_country_code) %>% 
+  summarise(
+    n=n(),
+    mean= mean(land_cultivated_ha, na.rm=T),
+    sd= sd(land_cultivated_ha, na.rm=T),
+    iqr = IQR(land_cultivated_ha, na.rm=T)
+
+  )
+
+big_plot_summary_subnational_area <- plot_summary_subnational_area[plot_summary_subnational_area$n>100,]
+
+
+ggplot()+
+ geom_boxplot(data = plot_summary_subnational_area, mapping = aes(y=n))
+
+
+
+
+ggplot(indicator_data, aes(y=land_cultivated_ha, x=geo_id, color=iso_country_code))+
+  geom_boxplot()+
+  ylim(0,100)
+
+
+ aov(land_cultivated_ha ~ iso_country_code,
+  data = indicator_data
+)
+
+ggplot(plot_summary_subnational_area, aes(x=mean))+
+  geom_histogram()+
+  
 
 
 ```
@@ -256,7 +289,7 @@ ggplot(summarised_land_size, aes(x=allocation_weights_mean, y=allocation_weights
   
   
   
-  ```
+```
 
 
 

@@ -368,26 +368,31 @@ continuous_pixel_stat <- function(polygon_feature,
 
 # RHoMIS Data
 # rhomis_data <- readr::read_csv("./data/rhomis-data/processed_data/processed_data.csv")
-# rhomis_data <- rhomis_data[!is.na(rhomis_data$gps_lat) & !is.na(rhomis_data$gps_lon),]
-# rhomis_data <- st_as_sf(rhomis_data, coords = c("gps_lon", "gps_lat"), 
+# rhomis_data <- rhomis_data[!is.na(rhomis_data$x_gps_latitude) & !is.na(rhomis_data$x_gps_longitude),]
+# rhomis_data <- st_as_sf(rhomis_data, coords = c("x_gps_longitude", "x_gps_latitude"), 
 #                         crs = 4326, agr = "constant", remove = F)
 
 # LSMS Data
 
-lsms_data <- readr::read_csv("data/prepped-data/lsms/farm-size-all-points.csv")
-lsms_data$index <- c(1:nrow(lsms_data))
+# lsms_data <- readr::read_csv("data/prepped-data/lsms/farm-size-all-points.csv")
+# lsms_data$index <- c(1:nrow(lsms_data))
 
 
 
 rhomis_data <- readr::read_csv("data/raw-data/rhomis/processed_data.csv", na=c("-999","NA", "n/a"))
 indicator_data <- readr::read_csv("data/raw-data/rhomis/indicator_data.csv", na=c("-999","NA", "n/a"))
-indicator_data <- indicator_data %>% merge(rhomis_data[c("id_unique","gps_lat", "gps_lon")],by="id_unique")
-indicator_data <- indicator_data[!is.na(indicator_data$gps_lat) & !is.na(indicator_data$gps_lon),]
-indicator_data <- st_as_sf(indicator_data, coords = c("gps_lon", "gps_lat"), 
+
+indicator_data <- indicator_data %>% merge(rhomis_data[c("id_unique","x_gps_latitude", "x_gps_longitude", "village")],by="id_unique")
+
+# indicator_data <- indicator_data %>% merge(rhomis_data[c("id_unique","x_gps_latitude", "x_gps_longitude")],by="id_unique")
+
+indicator_data <- indicator_data[!is.na(indicator_data$x_gps_latitude) & !is.na(indicator_data$x_gps_longitude),]
+indicator_data <- st_as_sf(indicator_data, coords = c("x_gps_longitude", "x_gps_latitude"), 
                            crs = 4326, agr = "constant", remove = F)
 
 indicator_data$index <- c(1:nrow(indicator_data))
 
+rhomis_data <- NULL
 
 # Point Stats -------------------------------------------------------------
 
@@ -481,14 +486,14 @@ adjusted_length_growing_period <- projectRaster(adjusted_length_growing_period,a
 # Point estimates
 r_stack <- raster::stack(aez_33_classes,adjusted_length_growing_period)
 
-rasValue_lsms=raster::extract(r_stack, lsms_data[c("longitude","latitude")]) %>% tibble::as_tibble()
-colnames(rasValue_lsms) <- gsub("X33_classes", "AEZ_Classes_33", colnames(rasValue_lsms))
-rasValue_lsms$AEZ_Classes_33 <- as.integer(rasValue_lsms$AEZ_Classes_33)
-rasValue_lsms <- convert_aez_classes(rasValue_lsms,
-                                "AEZ_Classes_33",
-                                aez_33_class_conversions)
+# rasValue_lsms=raster::extract(r_stack, lsms_data[c("longitude","latitude")]) %>% tibble::as_tibble()
+# colnames(rasValue_lsms) <- gsub("X33_classes", "AEZ_Classes_33", colnames(rasValue_lsms))
+# rasValue_lsms$AEZ_Classes_33 <- as.integer(rasValue_lsms$AEZ_Classes_33)
+# rasValue_lsms <- convert_aez_classes(rasValue_lsms,
+#                                 "AEZ_Classes_33",
+#                                 aez_33_class_conversions)
 
-rasValue_rhomis=raster::extract(r_stack, indicator_data[c("gps_lon","gps_lat")]) %>% tibble::as_tibble()
+rasValue_rhomis=raster::extract(r_stack, indicator_data[c("x_gps_longitude","x_gps_latitude")]) %>% tibble::as_tibble()
 colnames(rasValue_rhomis) <- gsub("X33_classes", "AEZ_Classes_33", colnames(rasValue_rhomis))
 rasValue_rhomis$AEZ_Classes_33 <- as.integer(rasValue_rhomis$AEZ_Classes_33)
 rasValue_rhomis <- convert_aez_classes(rasValue_rhomis,
@@ -497,25 +502,25 @@ rasValue_rhomis <- convert_aez_classes(rasValue_rhomis,
 
 # Zonal Estimates
 
-spatial_fao <- as(fao_level_2, "Spatial")
-spatial_fao <- spTransform(spatial_fao,crs(aez_33_classes))
+# spatial_fao <- as(fao_level_2, "Spatial")
+# spatial_fao <- spTransform(spatial_fao,crs(aez_33_classes))
+# 
+# # result <- categorical_pixel_counts(polygon_feature = spatial_fao,
+# #                          categorical_raster = raster::stack(aez_33_classes),
+# #                          category_prefix = "level_2_aez_33_classes"
+# #                         )
+# # 
+# # result <-convert_aez_column_name(aez_df = result,
+# #                         aez_colname_pattern = "level_2_aez_33_classes_",
+# #                         aez_conversion_tbl = aez_33_class_conversions)
+# # 
+# # 
+# # result <- continuous_pixel_stat(polygon_feature =result,
+# #                       continuous_raster = raster::stack(adjusted_length_growing_period),
+# #                       new_name = "level_2_mean_length_growing_season"
+# #                       )
 
-result <- categorical_pixel_counts(polygon_feature = spatial_fao,
-                         categorical_raster = raster::stack(aez_33_classes),
-                         category_prefix = "level_2_aez_33_classes"
-                        )
-
-result <-convert_aez_column_name(aez_df = result,
-                        aez_colname_pattern = "level_2_aez_33_classes_",
-                        aez_conversion_tbl = aez_33_class_conversions)
-
-
-result <- continuous_pixel_stat(polygon_feature =result,
-                      continuous_raster = raster::stack(adjusted_length_growing_period),
-                      new_name = "level_2_mean_length_growing_season"
-                      )
-
-fao_level_2 <- st_as_sf(result)
+# fao_level_2 <- st_as_sf(result)
 
 
 #### Joining data
@@ -573,14 +578,14 @@ fao_level_2 <-  fao_level_2 %>% merge(travel_time_health_data,
 
 
 
-
-lsms_geo  <- st_as_sf(lsms_data, coords = c("longitude", "latitude"), 
-                      crs = 4326, agr = "constant", remove = F)
-
-
-joined_df_lsms <- st_join(x=lsms_geo, 
-                     y=fao_level_2,
-                     left=T)
+# 
+# lsms_geo  <- st_as_sf(lsms_data, coords = c("longitude", "latitude"), 
+#                       crs = 4326, agr = "constant", remove = F)
+# 
+# 
+# joined_df_lsms <- st_join(x=lsms_geo, 
+#                      y=fao_level_2,
+#                      left=T)
 
 joined_df_rhomis <- st_join(x=indicator_data,
                             y=fao_level_2,
@@ -591,8 +596,8 @@ joined_df_rhomis <- st_join(x=indicator_data,
 #         y=dixons_farm_categories,
 #         left=T)
 
-joined_df_lsms <- joined_df_lsms %>%  merge(rasValue_lsms, by="index")#dplyr::bind_cols(rasValue)
-joined_df_lsms <- joined_df_lsms[!is.na(joined_df_lsms$ADM0_CODE),]
+# joined_df_lsms <- joined_df_lsms %>%  merge(rasValue_lsms, by="index")#dplyr::bind_cols(rasValue)
+# joined_df_lsms <- joined_df_lsms[!is.na(joined_df_lsms$ADM0_CODE),]
 
 joined_df_rhomis <- joined_df_rhomis %>%  merge(rasValue_rhomis, by="index")#dplyr::bind_cols(rasValue)
 joined_df_rhomis <- joined_df_rhomis[!is.na(joined_df_rhomis$ADM0_CODE),]
@@ -600,8 +605,8 @@ joined_df_rhomis <- joined_df_rhomis[!is.na(joined_df_rhomis$ADM0_CODE),]
 
 
 
-columns_to_merge_lsms <- c("index",colnames(fao_level_2),colnames(rasValue_lsms), "longitude", "latitude", "geometry")
-columns_to_merge_rhomis <- c("index",colnames(fao_level_2),colnames(rasValue_rhomis), "gps_lon", "gps_lat", "geometry")
+# columns_to_merge_lsms <- c("index",colnames(fao_level_2),colnames(rasValue_lsms), "longitude", "latitude", "geometry")
+columns_to_merge_rhomis <- c("index",colnames(fao_level_2),colnames(rasValue_rhomis), "x_gps_longitude", "x_gps_latitude", "geometry")
 
 
 # ind_data <- readr::read_csv("./data/rhomis-data/indicator_data/indicator_data.csv")
@@ -612,7 +617,7 @@ columns_to_merge_rhomis <- c("index",colnames(fao_level_2),colnames(rasValue_rho
 # 
 
 
-readr::write_csv(joined_df_lsms, "data/prepped-data/lsms-ee-gaez.csv")
+# readr::write_csv(joined_df_lsms, "data/prepped-data/lsms-ee-gaez.csv")
 readr::write_csv(joined_df_rhomis,"data/prepped-data//rhomis-ee-gaez.csv")
 
 # readr::write_csv(joined_df, "data/prepared-data/rhomis-ee-gaez.csv")

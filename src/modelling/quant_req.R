@@ -84,6 +84,8 @@ x <- c("healthcare_traveltime",
 
 
 
+
+
 aez_33 <- grep("AEZ_Classes_33_", colnames(indicator_data), value=T)
 
 
@@ -124,7 +126,6 @@ barplot(pca.res$eig[, 2], names.arg=1:nrow(pca.res$eig),
 
 
 
-logit()
 y <-c("land_cultivated_ha")
 
 
@@ -193,7 +194,14 @@ aic_fit <- MASS::stepAIC(model,
 aic_fit$anova
 
 rq.fit.lasso(x=indicator_data[c(x,aez_33)], y=indicator_data[[y]],)
-
-
+# 
+# 
+# 
+# 
+# summary <- indicator_data %>% 
+#   group_by(geo_id) %>% 
+#   summary(
+#     mean=mean(land_cultivated_ha,na.rm=T)
+#   )
 
 
