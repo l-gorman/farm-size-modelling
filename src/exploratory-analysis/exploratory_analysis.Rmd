@@ -397,15 +397,3 @@ values_to_keep <- summary_gathered$key[summary_gathered$mean!=0 | summary_gather
 ```
 
 
-```{r  message=F, warning=F}
-gathered_data <- gathered_data[gathered_data$key==values_to_keep,]
-gathered_data$key <- gsub("AEZ_Classes_33", "",gathered_data$key)
-ggplot(gathered_data, aes(x=value))+ 
-  geom_histogram()+
-  facet_wrap(~ key, scales = "free") 
-
-
-
-
-```
-
